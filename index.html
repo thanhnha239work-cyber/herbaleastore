@@ -721,6 +721,7 @@
   const BRAND           = "Herbaléa Japanese Pain Patch";
   const FB_PAGE         = "https://www.facebook.com/profile.php?id=61570031229005";  // ← your Facebook page (secondary contact button)
   const FB_PIXEL_ID     = "";                // ← optional: paste your Meta Pixel ID to enable tracking
+  const SHEET_ENDPOINT  = "https://script.google.com/macros/s/AKfycbwJeCSYg_DRcAiV-g3fOMqG97ya-B9SpAz-PFmJmhAqNjCdqz3Fj3pvtVsXf5gKi-1vqg/exec";                // ← paste your Google Apps Script Web App URL here (saves each order to your Google Sheet)
   /* ================================================================ */
 
   const PACKS = {
@@ -855,8 +856,26 @@
     const f = document.getElementById("orderForm");
     if(!f.checkValidity()){ f.reportValidity(); return false; }
     track("Lead"); track("Purchase");
+    saveToSheet();
     openWA(buildMsg());
     return false;
+  }
+  function saveToSheet(){
+    if(!SHEET_ENDPOINT) return;
+    try{
+      const pack = document.getElementById("f-pack").value;
+      const body = new URLSearchParams({
+        name:(document.getElementById("f-name").value||"").trim(),
+        phone:(document.getElementById("f-phone").value||"").trim(),
+        city:(_selC>=0?CITIES[_selC].en:""),
+        district:(_selC>=0&&_selD>=0?CITIES[_selC].d[_selD].en:""),
+        address:(document.getElementById("f-address").value||"").trim(),
+        notes:(document.getElementById("f-notes").value||"").trim(),
+        package:(PACKS[pack]?PACKS[pack].en:pack),
+        lang:LANG, page:location.href
+      });
+      fetch(SHEET_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:body.toString()});
+    }catch(err){}
   }
   /* WhatsApp is used ONLY for the order-form submit. Secondary contact = Facebook page (see .fb-link buttons). */
 
